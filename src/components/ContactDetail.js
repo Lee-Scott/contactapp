@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getContact, updatePhoto, sendChatMessage, deleteContact } from '../api/ContactService';
+import { getContact, updatePhoto, sendChatMessage, deleteContact, makeTwoContactsChat } from '../api/ContactService';
 import { toastError, toastSuccess } from '../api/ToastService';
 import { useNavigate } from 'react-router-dom';
+
+
+
 
 const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
     const navigate = useNavigate();
     const inputRef = useRef();
+    const [contactsList, setContactsList] = useState([]);
+    const [selectedContact, setSelectedContact] = useState(null);
+
     const [contact, setContact] = useState({
         id: '',
         name: '',
@@ -36,31 +42,40 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
 
     const toggleChat = () => {
         console.log(`Toggling chat, current state: ${showChat}`);
+
+        if (!showChat) {
+            fetchAndDisplayChat(contact.id, 'BOB_CONTACT_ID');
+        }
         setShowChat(!showChat);
     };
 
     const sendMessage = async (message) => {
+        if (!message.trim()) return; // Prevent sending empty messages
         console.log(`Sending message: ${message}`);
-        try {
 
-            await sendChatMessage(contact.id, message);
+        try {
+            // Append user's message to the chat
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { from: 'Me', text: message }
             ]);
 
-            // Wait for a reply from the bot
-            setTimeout(async () => {
-                const response = await sendChatMessage(contact.id, message);
-                setMessages((prevMessages) => [
-                    ...prevMessages,
-                    { from: contact.name, text: ` ${response}` }
-                ]);
-            }, 1000);
+            // Clear the input field
+            setInputValue('');
+
+            // Send the user's message to the API and wait for the bot's response
+            const response = await sendChatMessage(contact.id, message);
+
+            // Append the bot's response to the chat
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { from: contact.name, text: response }
+            ]);
         } catch (error) {
             console.error("Error sending chat message:", error);
         }
     };
+
 
 
     const handleKeyDown = (e) => {
@@ -127,6 +142,28 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
         onContactUpdated();
         navigate('/contacts');
     };
+    async function fetchAndDisplayChat(contactId1, contactId2) {
+        try {
+            console.log(`Attempting to fetch chat between ${contactId1} and ${contactId2}`); // Log the contact IDs
+            const chatData = await makeTwoContactsChat(contactId1, contactId2);
+            console.log("Chat data fetched:", chatData); // Log the fetched chat data
+
+            if (chatData && chatData.messages) {
+                console.log("Messages found:", chatData.messages); // Log the messages data
+                setMessages(chatData.messages.map(msg => ({
+                    from: msg.sender,
+                    text: msg.content
+                })));
+            } else {
+                console.error("Chat data or messages are undefined"); // Log if no messages found
+            }
+        } catch (error) {
+            console.error("Error fetching chat:", error); // Log any error that occurs during fetch
+        }
+    }
+
+
+
 
     useEffect(() => {
         console.log('ContactDetail mounted');
@@ -135,7 +172,9 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
 
     return (
         <>
-            <Link to={'/contacts'} className='link'><i className='bi bi-arrow-left'></i> Back to list</Link>
+            <Link to={'/contacts'} className='link'>
+                <i className='bi bi-arrow-left'></i> Back to list
+            </Link>
             <div className='profile'>
                 <div className='profile__details'>
                     <img src={contact.photoUrl} alt={`Profile photo of ${contact.name}`} />
@@ -144,19 +183,54 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
                         <button onClick={toggleChat} className='btn me-3'>
                             <i className='bi bi-chat'></i> Chat with {contact.name}
                         </button>
+    
+                        {/* Dropdown button */}
+                        <button 
+                            className="btn me-3 dropdown-toggle" 
+                            type="button" 
+                            id="dropdownMenuButton" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                            onClick={toggleChat}
+                        >
+                            <i className='bi bi-chat'></i> Have {contact.name} Chat With Bob
+                        </button>
+    
+                        <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li>
+                                <button className="dropdown-item" onClick={() => alert('Chat with Bob')}>
+                                    Bob
+                                </button>
+                            </li>
+                            <li>
+                                <button className="dropdown-item" onClick={() => alert('Chat with Linda')}>
+                                    Linda
+                                </button>
+                            </li>
+                            <li>
+                                <button className="dropdown-item" onClick={() => alert('Chat with Tina')}>
+                                    Tina
+                                </button>
+                            </li>
+                        </ul>
+    
                         <button onClick={selectImage} className='btn change-photo-button'>
                             <i className='bi bi-camera'></i> Change Photo
                         </button>
-
                     </div>
                 </div>
-
+    
                 {showChat && (
                     <div className="chat-box">
                         <div className="messages">
                             {messages.map((msg, index) => (
-                                <div key={index} className={`message ${msg.from === 'Me' ? 'me' : 'contact'}`}>
-                                    <p><strong>{msg.from === 'Me' ? 'Me' : contact.name}:</strong> {msg.text}</p>
+                                <div
+                                    key={index}
+                                    className={`message ${msg.from === 'Me' ? 'me' : 'contact'}`}
+                                >
+                                    <p>
+                                        <strong>{msg.from}:</strong> {msg.text}
+                                    </p>
                                 </div>
                             ))}
                         </div>
@@ -169,12 +243,11 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
                         <button onClick={() => sendMessage(inputValue)}>Send</button>
                     </div>
                 )}
-
-
+    
                 <form style={{ display: 'none' }}>
                     <input type='file' ref={inputRef} onChange={(event) => updatePhoto(event.target.files[0])} name='file' accept='image/*' />
                 </form>
-
+    
                 <div className='profile__settings'>
                     <div>
                         <form onSubmit={onUpdateContact} className="form">
@@ -215,6 +288,6 @@ const ContactDetail = ({ updateContact, updateImage, onContactUpdated }) => {
             </div>
         </>
     );
-};
-
+}
+    
 export default ContactDetail;

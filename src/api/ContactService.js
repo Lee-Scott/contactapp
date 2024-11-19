@@ -44,4 +44,40 @@ export async function sendChatMessage(contactId, message) {
         console.error("Error sending chat message:", error);  // Console log added
         throw error;  // Handle error as needed
     }
+ 
+    
 }
+export async function makeTwoContactsChat(contactId1, contactId2) {
+    try {
+        // Hardcode the second contact ID (Bob's ID)
+        const bobContactId = "83f9cb46-b17d-4dd8-8224-a06ac41c8af1";
+        console.log(`Fetching chat dynamically between contacts: ${contactId1} and ${bobContactId}`); // Log for start of the fetch
+        const response = await axios.get(`${CHAT_API_URL}/between/${contactId1}/${bobContactId}`);
+        
+        console.log("Response received:", response); // Log the full response
+        console.log("Response data:", response.data); // Log the response data
+
+        // Parse the response data if it's in string format (assuming it's a plain text conversation)
+        const parsedData = {
+            messages: response.data.split('\n').map(line => {
+                const [sender, content] = line.split(':');
+                return sender && content ? { sender, content } : null;
+            }).filter(msg => msg !== null)
+        };
+
+        // Check if the parsed data is structured correctly and return it
+        if (parsedData && parsedData.messages.length > 0) {
+            return parsedData;
+        } else {
+            console.error("Chat data or messages are undefined or improperly formatted.");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching chat between contacts:", error); // Log the error
+        throw error;
+    }
+}
+
+
+
+

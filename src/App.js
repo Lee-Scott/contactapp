@@ -7,6 +7,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ContactDetail from './components/ContactDetail';
 import { toastError } from './api/ToastService';
 import { ToastContainer } from 'react-toastify';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
+
 
 function App() {
   const modalRef = useRef();
