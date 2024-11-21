@@ -49,10 +49,9 @@ export async function sendChatMessage(contactId, message) {
 }
 export async function makeTwoContactsChat(contactId1, contactId2) {
     try {
-        // Hardcode the second contact ID (Bob's ID)
-        const bobContactId = "83f9cb46-b17d-4dd8-8224-a06ac41c8af1";
-        console.log(`Fetching chat dynamically between contacts: ${contactId1} and ${bobContactId}`); // Log for start of the fetch
-        const response = await axios.get(`${CHAT_API_URL}/between/${contactId1}/${bobContactId}`);
+        
+        console.log(`Fetching chat dynamically between contacts: ${contactId1} and ${contactId2}`); // Log for start of the fetch
+        const response = await axios.get(`${CHAT_API_URL}/between/${contactId1}/${contactId2}`);
         
         console.log("Response received:", response); // Log the full response
         console.log("Response data:", response.data); // Log the response data

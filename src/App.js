@@ -2,15 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 import Header from './components/Header'
 import ContactList from './components/ContactList'
-import { getContacts, saveContact, updatePhoto } from './api/ContactService';
+import { getContacts, saveContact, updatePhoto as updatePhoto } from './api/ContactService';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ContactDetail from './components/ContactDetail';
 import { toastError } from './api/ToastService';
 import { ToastContainer } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-
-
 
 
 function App() {
@@ -28,7 +26,7 @@ function App() {
     status: '',
   });
 
-   const getAllContacts = async (page = 0, size = 6) => {
+  const getAllContacts = async (page = 0, size = 10) => {
     try {
       setCurrentPage(page);
       const { data } = await getContacts(page, size);
@@ -39,8 +37,6 @@ function App() {
       toastError(error.message);
     }
   };
-
-  
 
   const onChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });
@@ -72,8 +68,6 @@ function App() {
     }
   };
 
-  
-
   const updateContact = async (contact) => {
     try {
       const { data } = await saveContact(contact);
@@ -99,10 +93,6 @@ function App() {
     getAllContacts();
   }, []);
 
-  const onContactUpdated = () => {
-    getAllContacts();
-};
-
   return (
     <>
       <Header toggleModal={toggleModal} nbOfContacts={data.totalElements} />
@@ -111,7 +101,7 @@ function App() {
           <Routes>
             <Route path='/' element={<Navigate to={'/contacts'} />} />
             <Route path="/contacts" element={<ContactList data={data} currentPage={currentPage} getAllContacts={getAllContacts} />} />
-            <Route path="/contacts/:id" element={<ContactDetail updateContact={updateContact} updateImage={updateImage} onContactUpdated={onContactUpdated} />} />
+            <Route path="/contacts/:id" element={<ContactDetail updateContact={updateContact} updateImage={updateImage} />} />
           </Routes>
         </div>
       </main>
